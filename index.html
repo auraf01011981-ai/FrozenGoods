@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Frozen Goods Dashboard</title>
+<style>
+:root{--bg:#eef5f8;--card:#fff;--tx:#14232e;--mu:#62788a;--pr:#0a6f8f;--pl:#d9eef5;--ok:#16895a;--wa:#c77700;--er:#cf3b36;--bd:#d8e4ea;box-sizing:border-box}
+@media(prefers-color-scheme:dark){:root{--bg:#0d1820;--card:#15252f;--tx:#e6f0f5;--mu:#8ca3b3;--pr:#52bde0;--pl:#173544;--bd:#243a47}}
+*{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:90px}
+header{background:var(--pr);color:#fff;padding:env(safe-area-inset-top,0) 16px 0}
+header div{max-width:1000px;margin:auto;padding:16px 0;display:flex;justify-content:space-between;align-items:center;gap:8px}
+h1{font-size:1.25rem;margin:0}h2{font-size:1.05rem;margin:0 0 10px}
+main{max-width:1000px;margin:auto;padding:14px}
+.v{display:none}.v.on{display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+.grid .card{margin:0}
+.k{color:var(--mu);font-size:.82rem}.n{font-size:1.4rem;font-weight:700;overflow-wrap:anywhere}
+.ok{color:var(--ok)}.wa{color:var(--wa)}.er{color:var(--er)}
+button,select,input{font:inherit;color:inherit}
+button{background:var(--pr);color:#fff;border:0;border-radius:10px;padding:10px 14px;cursor:pointer;min-height:44px}
+button.g{background:var(--pl);color:var(--pr)}button.d{background:transparent;color:var(--er);padding:6px 10px;min-height:36px}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--wa);outline-offset:2px}
+input,select{width:100%;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--card);min-height:44px}
+label{display:block;font-size:.85rem;color:var(--mu);margin:10px 0 4px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}.bar>*{flex:0 1 auto}
+.li{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd)}
+.li:last-child{border:0}.li small{color:var(--mu);display:block}
+.b{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.78rem;font-weight:600;background:var(--pl);color:var(--pr)}
+.b.ok{background:#dcf5e8}.b.wa{background:#fdeccb}.b.er{background:#fbdcda}
+.chart{display:flex;align-items:flex-end;gap:6px;height:130px}
+.chart div{flex:1;text-align:center;font-size:.7rem;color:var(--mu);display:flex;flex-direction:column;justify-content:flex-end;height:100%}
+.chart i{display:block;background:var(--pr);border-radius:6px 6px 0 0;min-height:2px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cal b{font-size:.75rem;color:var(--mu)}
+.cal button{background:var(--card);color:var(--tx);border:1px solid var(--bd);padding:4px 0;min-height:52px;border-radius:8px;font-size:.9rem}
+.cal button.sel{border:2px solid var(--pr)}.cal button.td{background:var(--pl)}
+.dots{display:flex;justify-content:center;gap:3px;height:8px}.dots span{width:7px;height:7px;border-radius:50%}
+nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--bd);display:flex;padding-bottom:env(safe-area-inset-bottom,0)}
+nav button{flex:1;background:none;color:var(--mu);border-radius:0;font-size:.78rem;padding:8px 2px}
+nav button.on{color:var(--pr);font-weight:700;box-shadow:inset 0 3px var(--pr)}
+nav span{display:block;font-size:1.25rem}
+dialog{border:0;border-radius:14px;width:min(94vw,460px);background:var(--card);color:var(--tx);padding:18px;max-height:92vh}
+dialog::backdrop{background:#0008}
+.empty{color:var(--mu);text-align:center;padding:18px}
+@media(min-width:720px){body{padding-bottom:0}nav{position:static;max-width:1000px;margin:12px auto 0;border:1px solid var(--bd);border-radius:12px;overflow:hidden}}
+</style>
+</head>
+<body>
+<header><div><h1>❄️ Frozen Goods Dashboard</h1><button class="g" onclick="dlg('bk')">Backup</button></div></header>
+<nav id="nav"></nav>
+<main>
+<section class="v on" id="v-home">
+  <div class="bar"><h2>Overview</h2><select id="per" onchange="render()" style="width:auto"><option value="today">Today</option><option value="week">Last 7 days</option><option value="month" selected>This month</option><option value="all">All time</option></select></div>
+  <div class="grid" id="cards"></div>
+  <div class="card"><h2>Sales, last 7 days</h2><div class="chart" id="chart"></div></div>
+  <div class="card"><h2>Best sellers</h2><div id="top"></div></div>
+  <div class="card"><h2>Low stock</h2><div id="low"></div></div>
+</section>
+<section class="v" id="v-sales">
+  <div class="bar"><h2>Sales</h2><button onclick="saleForm()">+ New sale</button></div>
+  <input id="q" placeholder="Search customer or item" oninput="render()" style="margin-bottom:12px">
+  <div class="card" id="sales"></div>
+</section>
+<section class="v" id="v-stock">
+  <div class="bar"><h2>Inventory</h2><button onclick="itemForm()">+ Add item</button></div>
+  <div class="card" id="stock"></div>
+</section>
+<section class="v" id="v-utang">
+  <h2>Utang (unpaid balances)</h2>
+  <div class="grid" id="ucards"></div>
+  <div class="card" id="utang"></div>
+</section>
+<section class="v" id="v-cal">
+  <div class="bar"><button class="g" onclick="mv(-1)">‹ Prev</button><h2 id="mt" style="margin:0"></h2><button class="g" onclick="mv(1)">Next ›</button></div>
+  <div class="card"><div class="cal" id="cal"></div>
+  <p class="k"><span class="er">●</span> payment due &nbsp; <span style="color:var(--pr)">●</span> sale made</p></div>
+  <div class="card"><h2 id="dt"></h2><div id="day"></div></div>
+</section>
+</main>
+
+<dialog id="d"><div id="df"></div></dialog>
+
+<script>
+const $=id=>document.getElementById(id), uid=()=>Math.random().toString(36).slice(2,9);
+const iso=d=>new Date(d.getTime()-d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const today=()=>iso(new Date());
+const add=(s,n)=>{const d=new Date(s+'T00:00');d.setDate(d.getDate()+n);return iso(d)};
+const peso=n=>'₱'+Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fd=s=>new Date(s+'T00:00').toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'});
+let db={items:[],sales:[]};
+try{db=JSON.parse(localStorage.getItem('frozen-db'))||db}catch(e){}
+if(!db.items.length&&!db.sales.length)db.items=[
+ {id:uid(),name:'Hotdog (1kg)',cost:150,price:190,stock:20,low:5},
+ {id:uid(),name:'Chicken nuggets (500g)',cost:120,price:155,stock:15,low:5},
+ {id:uid(),name:'Longganisa (pack)',cost:90,price:120,stock:25,low:8}];
+const mig=()=>db.sales.forEach(s=>{if(!s.lines)s.lines=[{itemId:s.itemId,name:s.name,qty:s.qty,price:s.price,cost:s.cost}]});mig();
+const save=()=>{try{localStorage.setItem('frozen-db',JSON.stringify(db))}catch(e){}render()};
+const tot=s=>s.lines.reduce((a,l)=>a+l.qty*l.price,0), cnt=s=>s.lines.reduce((a,l)=>a+l.qty,0), paid=s=>s.pays.reduce((a,p)=>a+p.a,0), bal=s=>tot(s)-paid(s), prof=s=>s.lines.reduce((a,l)=>a+l.qty*(l.price-l.cost),0);
+const status=s=>bal(s)<=0?['Paid','ok']:paid(s)>0?['Partial','wa']:['Utang','er'];
+const late=s=>bal(s)>0&&s.due&&s.due<today();
+const item=id=>db.items.find(i=>i.id==id);
+let view='home',cm=new Date(),sel=today();
+const tabs=[['home','📊','Home'],['sales','🧾','Sales'],['stock','📦','Stock'],['utang','🤝','Utang'],['cal','📅','Calendar']];
+$('nav').innerHTML=tabs.map(t=>`<button id="t-${t[0]}" onclick="go('${t[0]}')"><span>${t[1]}</span>${t[2]}</button>`).join('');
+function go(v){view=v;document.querySelectorAll('.v').forEach(e=>e.classList.toggle('on',e.id=='v-'+v));tabs.forEach(t=>$('t-'+t[0]).classList.toggle('on',t[0]==v));render()}
+function dlg(k){$('df').innerHTML=forms[k]();$('d').showModal()}
+const close=()=>$('d').close();
+const card=(k,n,c='')=>`<div class="card"><div class="k">${k}</div><div class="n ${c}">${n}</div></div>`;
+
+function render(){
+  // overview
+  const p=$('per').value,t=today(),from=p=='today'?t:p=='week'?add(t,-6):p=='month'?t.slice(0,8)+'01':'0000';
+  const S=db.sales.filter(s=>s.date>=from),sum=f=>S.reduce((a,s)=>a+f(s),0);
+  const owed=db.sales.reduce((a,s)=>a+Math.max(0,bal(s)),0),od=db.sales.filter(late).length,lowN=db.items.filter(i=>i.stock<=i.low);
+  $('cards').innerHTML=card('Sales',peso(sum(tot)))+card('Profit',peso(sum(prof)),'ok')+card('Cash collected',peso(sum(paid)))+card('Unpaid utang (all)',peso(owed),owed?'wa':'')+card('Overdue',od,od?'er':'')+card('Low stock items',lowN.length,lowN.length?'wa':'');
+  const days=[...Array(7)].map((_,i)=>add(t,i-6)),vals=days.map(d=>db.sales.filter(s=>s.date==d).reduce((a,s)=>a+tot(s),0)),mx=Math.max(...vals,1);
+  $('chart').innerHTML=days.map((d,i)=>`<div><span>${vals[i]?Math.round(vals[i]):''}</span><i style="height:${vals[i]/mx*85}%"></i>${new Date(d+'T00:00').toLocaleDateString('en',{weekday:'short'})}</div>`).join('');
+  const m={};S.forEach(s=>s.lines.forEach(l=>m[l.name]=(m[l.name]||0)+l.qty));
+  const tp=Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  $('top').innerHTML=tp.length?tp.map(([n,q])=>`<div class="li"><span>${esc(n)}</span><b>${q} sold</b></div>`).join(''):'<div class="empty">No sales in this period yet.</div>';
+  $('low').innerHTML=lowN.length?lowN.map(i=>`<div class="li"><span>${esc(i.name)}</span><b class="${i.stock?'wa':'er'}">${i.stock} left</b></div>`).join(''):'<div class="empty">All items are well stocked.</div>';
+  // sales
+  const q=$('q').value.toLowerCase();
+  const L=[...db.sales].sort((a,b)=>b.date.localeCompare(a.date)).filter(s=>(s.customer+s.lines.map(l=>l.name).join(' ')).toLowerCase().includes(q));
+  $('sales').innerHTML=L.length?L.map(saleRow).join(''):'<div class="empty">No sales yet. Tap “+ New sale” to record one.</div>';
+  // stock
+  $('stock').innerHTML=db.items.length?db.items.map(i=>`<div class="li"><div><b>${esc(i.name)}</b><small>Cost ${peso(i.cost)} · Price ${peso(i.price)} · Alert at ${i.low}</small></div><div style="text-align:right"><b class="${i.stock<=i.low?'er':''}">${i.stock} in stock</b><div><button class="g" onclick="restock('${i.id}')">+ Stock</button> <button class="g" onclick="itemForm('${i.id}')">Edit</button></div></div></div>`).join(''):'<div class="empty">No items yet. Tap “+ Add item”.</div>';
+  // utang
+  const U=db.sales.filter(s=>bal(s)>0).sort((a,b)=>(a.due||'9').localeCompare(b.due||'9'));
+  $('ucards').innerHTML=card('Total unpaid',peso(owed),'wa')+card('Customers owing',new Set(U.map(s=>s.customer)).size)+card('Overdue',od,od?'er':'');
+  const G={};U.forEach(s=>(G[s.customer]=G[s.customer]||[]).push(s));
+  $('utang').innerHTML=U.length?Object.entries(G).map(([n,a])=>`<h2 style="margin:6px 0 0">${esc(n)} <span class="b er">owes ${peso(a.reduce((x,s)=>x+bal(s),0))}</span></h2>${a.map(saleRow).join('')}`).join('<hr style="border:0;border-top:2px solid var(--bd);margin:14px 0">'):'<div class="empty">No unpaid balances. 🎉</div>';
+  // calendar
+  const y=cm.getFullYear(),mo=cm.getMonth(),first=new Date(y,mo,1).getDay(),dim=new Date(y,mo+1,0).getDate();
+  $('mt').textContent=cm.toLocaleDateString('en',{month:'long',year:'numeric'});
+  let h=['S','M','T','W','T','F','S'].map(d=>`<b>${d}</b>`).join('')+'<span></span>'.repeat(first);
+  for(let d=1;d<=dim;d++){const ds=iso(new Date(y,mo,d)),sl=db.sales.some(s=>s.date==ds),du=db.sales.some(s=>bal(s)>0&&s.due==ds);
+    h+=`<button class="${ds==sel?'sel ':''}${ds==t?'td':''}" onclick="sel='${ds}';render()">${d}<div class="dots">${sl?'<span style="background:var(--pr)"></span>':''}${du?'<span style="background:var(--er)"></span>':''}</div></button>`}
+  $('cal').innerHTML=h;$('dt').textContent=fd(sel);
+  const dd=db.sales.filter(s=>s.date==sel),dp=db.sales.filter(s=>bal(s)>0&&s.due==sel);
+  $('day').innerHTML=(dp.length?`<div class="k">Payments due</div>${dp.map(saleRow).join('')}`:'')+(dd.length?`<div class="k" style="margin-top:8px">Sales made</div>${dd.map(saleRow).join('')}`:'')||'<div class="empty">Nothing on this day.</div>';
+}
+function saleRow(s){const[st,c]=status(s);return`<div class="li"><div><b>${esc(s.customer||'Walk-in')}</b> <span class="b ${c}">${st}</span>${late(s)?' <span class="b er">Overdue</span>':''}<small>Bought ${fd(s.date)}${bal(s)>0&&s.due?` · <b>Pay by ${fd(s.due)}</b>`:''}</small>${s.lines.map(l=>`<small>${l.qty} × ${esc(l.name)} @ ${peso(l.price)} = ${peso(l.qty*l.price)}</small>`).join('')}<small>${cnt(s)} item${cnt(s)>1?'s':''} total${paid(s)>0&&bal(s)>0?' · paid '+peso(paid(s)):''}</small></div><div style="text-align:right"><b>${peso(tot(s))}</b><small>Profit ${peso(prof(s))}</small>${bal(s)>0?`<small class="er">Owes ${peso(bal(s))}</small><button onclick="pay('${s.id}')">Receive</button>`:''}<button class="d" onclick="delSale('${s.id}')">Delete</button></div></div>`}
+function mv(n){cm=new Date(cm.getFullYear(),cm.getMonth()+n,1);render()}
+
+const forms={
+ bk:()=>`<h2>Backup</h2><p class="k">Data is saved in this device’s browser. Download a backup regularly and keep it safe (e.g. in Google Drive).</p><button onclick="exp()" style="width:100%">Download backup</button><label>Restore from a backup file</label><input type="file" accept=".json" onchange="imp(this.files[0])"><br><br><button class="g" onclick="close_()" style="width:100%">Close</button>`,
+};
+const close_=()=>$('d').close();
+function exp(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db)],{type:'application/json'}));a.download='frozen-backup-'+today()+'.json';a.click()}
+function imp(f){if(!f)return;f.text().then(t=>{try{const x=JSON.parse(t);if(!x.items||!x.sales)throw 0;if(confirm('Replace all current data with this backup?')){db=x;mig();save();close_()}}catch(e){alert('That file is not a valid backup.')}})}
+
+function itemForm(id){const i=id?item(id):{name:'',cost:'',price:'',stock:'',low:5};
+ $('df').innerHTML=`<h2>${id?'Edit':'Add'} item</h2><label>Item name</label><input id="f1" value="${esc(i.name)}"><div class="row"><div><label>Cost (₱)</label><input id="f2" type="number" inputmode="decimal" value="${i.cost}"></div><div><label>Selling price (₱)</label><input id="f3" type="number" inputmode="decimal" value="${i.price}"></div></div><div class="row"><div><label>Stock</label><input id="f4" type="number" inputmode="numeric" value="${i.stock}"></div><div><label>Low-stock alert</label><input id="f5" type="number" inputmode="numeric" value="${i.low}"></div></div><br><div class="row"><button class="g" onclick="close_()">Cancel</button><button onclick="saveItem('${id||''}')">Save item</button></div>${id?`<br><button class="d" onclick="delItem('${id}')">Delete item</button>`:''}`;$('d').showModal()}
+function saveItem(id){const o={name:$('f1').value.trim(),cost:+$('f2').value||0,price:+$('f3').value||0,stock:+$('f4').value||0,low:+$('f5').value||0};
+ if(!o.name)return alert('Enter the item name.');if(id)Object.assign(item(id),o);else db.items.push({id:uid(),...o});save();close_()}
+function delItem(id){if(confirm('Delete this item? Past sales are kept.')){db.items=db.items.filter(i=>i.id!=id);save();close_()}}
+function restock(id){const n=+prompt('How many units to add to stock?');if(n>0){item(id).stock+=n;save()}}
+
+let cart=[];
+function saleForm(){if(!db.items.length)return alert('Add an item in Stock first.');cart=[];
+ $('df').innerHTML=`<h2>New sale</h2><label>Customer name</label><input id="s4" placeholder="Required for utang">
+ <label>Date purchased</label><input id="s3" type="date" value="${today()}">
+ <label>Add items (price fills in automatically)</label>
+ <div class="row"><select id="s1" style="flex:3">${db.items.map(i=>`<option value="${i.id}">${esc(i.name)} – ${peso(i.price)} (${i.stock} left)</option>`).join('')}</select><input id="s2" type="number" inputmode="numeric" value="1" min="1" style="flex:1"><button class="g" style="flex:0 0 auto" onclick="addLine()">Add</button></div>
+ <div id="cart"></div>
+ <label>Payment</label><select id="s5" onchange="pt()"><option value="cash">Cash (fully paid)</option><option value="part">Initial payment, balance utang</option><option value="utang">Utang (nothing paid yet)</option></select>
+ <div id="pp" style="display:none"><div class="row"><div id="ip"><label>Initial payment (₱)</label><input id="s6" type="number" inputmode="decimal"></div><div><label>Planned pay date</label><input id="s7" type="date" value="${add(today(),7)}"></div></div></div>
+ <br><div class="row"><button class="g" onclick="close_()">Cancel</button><button onclick="saveSale()">Save sale</button></div>`;$('d').showModal();drawCart();pt()}
+function addLine(){const i=item($('s1').value),q=+$('s2').value;if(!(q>0))return;const e=cart.find(l=>l.itemId==i.id);if(e)e.qty+=q;else cart.push({itemId:i.id,name:i.name,qty:q,price:i.price,cost:i.cost});$('s2').value=1;drawCart()}
+function drawCart(){const t=cart.reduce((a,l)=>a+l.qty*l.price,0);$('cart').innerHTML=cart.length?cart.map((l,n)=>`<div class="li"><span>${l.qty} × ${esc(l.name)}<small>${peso(l.price)} each</small></span><span><b>${peso(l.qty*l.price)}</b> <button class="d" onclick="cart.splice(${n},1);drawCart()">✕</button></span></div>`).join('')+`<div class="li"><b>Total</b><b>${peso(t)}</b></div>`:'<div class="empty">No items added yet.</div>'}
+function pt(){const v=$('s5').value;$('pp').style.display=v=='cash'?'none':'block';$('ip').style.display=v=='part'?'':'none'}
+function saveSale(){const date=$('s3').value,cu=$('s4').value.trim(),ty=$('s5').value;
+ if(!cart.length)return alert('Add at least one item.');
+ if(ty!='cash'&&!cu)return alert('Enter the customer’s name for utang.');
+ const total=cart.reduce((a,l)=>a+l.qty*l.price,0),due=ty=='cash'?'':$('s7').value;
+ if(ty!='cash'&&!due)return alert('Choose the planned pay date.');
+ const pd=ty=='cash'?total:ty=='part'?+$('s6').value||0:0;
+ if(ty=='part'&&(pd<=0||pd>=total))return alert('Initial payment must be more than 0 and less than '+peso(total)+'.');
+ for(const l of cart){const i=item(l.itemId);if(i&&l.qty>i.stock&&!confirm(`Only ${i.stock} ${i.name} in stock. Record anyway?`))return}
+ db.sales.push({id:uid(),date,customer:cu,type:ty,due,lines:cart.map(l=>({...l})),pays:pd?[{d:date,a:pd}]:[]});
+ cart.forEach(l=>{const i=item(l.itemId);if(i)i.stock=Math.max(0,i.stock-l.qty)});save();close_()}
+function pay(id){const s=db.sales.find(x=>x.id==id),a=+prompt(`${s.customer} owes ${peso(bal(s))}. Amount received (₱)?`,bal(s));
+ if(a>0){s.pays.push({d:today(),a:Math.min(a,bal(s))});save()}}
+function delSale(id){if(!confirm('Delete this sale? Stock will be returned.'))return;const s=db.sales.find(x=>x.id==id);s.lines.forEach(l=>{const i=item(l.itemId);if(i)i.stock+=l.qty});db.sales=db.sales.filter(x=>x.id!=id);save()}
+go('home');
+</script>
+</body>
+</html>
